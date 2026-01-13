@@ -7,4 +7,13 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'my-store';
+
+
+  // In your Angular TS file:
+isSidebarCollapsed = false;
+toggleSidebar() {
+  console.log("hello");
+  
+  this.isSidebarCollapsed = !this.isSidebarCollapsed;
+}
 }
