@@ -1,463 +1,399 @@
-<div class="bg-gray-50 min-h-screen p-2 md:p-5">
+<div class="bg-gray-50 h-[calc(100dvh)] w-full flex flex-col overflow-hidden">
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading" class="flex items-center justify-center min-h-screen">
-    <div class="text-center">
-      <div class="spinner mx-auto mb-4"></div>
-      <p class="text-gray-600">Loading audit data...</p>
-    </div>
-  </div>
+  <!-- Main Scrollable Area -->
+  <div class="flex-1 overflow-y-auto w-full custom-scrollbar relative">
+    <div class="min-h-full p-3 md:p-6 pb-48">
 
-  <!-- No Data State -->
-  <div *ngIf="!isLoading && !isDataLoaded()" class="flex items-center justify-center min-h-screen">
-    <div class="text-center p-8 bg-white rounded-2xl shadow-lg">
-      <div class="text-6xl mb-4">📊</div>
-      <h2 class="text-2xl font-bold text-gray-800 mb-2">No Audit Data Available</h2>
-      <p class="text-gray-600 mb-4">Please check the Google Sheet connection or add audit records.</p>
-      <button (click)="fetchBranches()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-        Try Again
-      </button>
-    </div>
-  </div>
-
-  <!-- MAIN DASHBOARD -->
-  <div *ngIf="!isLoading && isDataLoaded() && !showAllBranches" class="fade-in">
-
-    <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-          📊 Mystery Audit Dashboard
-        </h1>
-        <p class="text-gray-600">Comprehensive store performance analytics and insights</p>
-      </div>
-      <div class="mt-4 md:mt-0 flex flex-wrap gap-3">
-        <button (click)="exportToCSV()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition text-sm font-medium flex items-center">
-          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-width="2"></path>
-          </svg>
-          Export Report
-        </button>
-        <button (click)="showAllBranches = true" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition text-sm font-medium flex items-center shadow-md">
-          View All Details
-          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round"></path>
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Key Metrics Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-
-      <!-- Total Audits -->
-      <div class="bg-white rounded-xl p-5 shadow-md hover-lift transition-all cursor-pointer border-l-4 border-orange-500">
-        <div class="flex items-center justify-between mb-3">
-          <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-            <span class="text-2xl">🏪</span>
+      <!-- Loading State -->
+      <div *ngIf="isLoading" class="absolute inset-0 flex items-center justify-center bg-gray-50 z-50">
+        <div class="text-center">
+          <div
+            class="spinner w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4">
           </div>
-        </div>
-        <div class="text-3xl font-bold text-gray-900 mb-1">{{ branches.length }}</div>
-        <div class="text-sm text-gray-600">Total Audits</div>
-      </div>
-
-      <!-- Average Hygiene -->
-      <div class="bg-white rounded-xl p-5 shadow-md hover-lift transition-all cursor-pointer border-l-4 border-green-500">
-        <div class="flex items-center justify-between mb-3">
-          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-            <span class="text-2xl">🧼</span>
-          </div>
-        </div>
-        <div class="text-3xl font-bold text-gray-900 mb-1">{{ averageScore() }}/5</div>
-        <div class="text-sm text-gray-600 mb-2">Avg. Hygiene</div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
-          <div class="bg-green-500 h-2 rounded-full" [style.width.%]="(averageScore()/5)*100"></div>
+          <p class="text-gray-600 font-medium">Loading audit data...</p>
         </div>
       </div>
 
-      <!-- Average Experience -->
-      <div class="bg-white rounded-xl p-5 shadow-md hover-lift transition-all cursor-pointer border-l-4 border-purple-500">
-        <div class="flex items-center justify-between mb-3">
-          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-            <span class="text-2xl">⭐</span>
-          </div>
-        </div>
-        <div class="text-3xl font-bold text-gray-900 mb-1">{{ averageExperience() }}/10</div>
-        <div class="text-sm text-gray-600 mb-2">Avg. Experience</div>
-        <div class="w-full bg-gray-200 rounded-full h-2">
-          <div class="bg-purple-500 h-2 rounded-full" [style.width.%]="(averageExperience()/10)*100"></div>
-        </div>
-      </div>
-
-      <!-- Top Performer -->
-      <div *ngIf="highestRated()" class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-5 shadow-md hover-lift transition-all cursor-pointer text-white">
-        <div class="flex items-center mb-3">
-          <span class="text-2xl mr-2">🏆</span>
-          <span class="text-sm font-medium opacity-90">Top Performer</span>
-        </div>
-        <div class="text-lg font-bold mb-1 truncate">{{ getStoreName(highestRated()!) }}</div>
-        <div class="text-sm opacity-75">{{ getCity(highestRated()!) }}</div>
-        <div class="flex gap-2 mt-3">
-          <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">H: {{ getOverallHygiene(highestRated()!) }}</span>
-          <span class="text-xs bg-white bg-opacity-20 px-2 py-1 rounded">E: {{ getFinalScoresOverallExperience(highestRated()!) }}</span>
-        </div>
-      </div>
-
-      <!-- Recent Visit -->
-      <div *ngIf="lastVisit()" class="bg-white rounded-xl p-5 shadow-md hover-lift transition-all cursor-pointer border-l-4 border-indigo-500">
-        <div class="flex items-center justify-between mb-3">
-          <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <span class="text-2xl">🕒</span>
-          </div>
-        </div>
-        <div class="text-lg font-bold text-gray-900 mb-1 truncate">{{ getStoreName(lastVisit()!) }}</div>
-        <div class="text-xs text-gray-600">{{ getDateOfVisit(lastVisit()!) }}</div>
-        <div class="text-xs text-gray-500">{{ getTimeOfVisit(lastVisit()!) }}</div>
-      </div>
-
-      <!-- View All CTA -->
-      <div (click)="showAllBranches = true"
-           class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-5 shadow-md hover-lift transition-all cursor-pointer flex flex-col items-center justify-center text-white">
-        <div class="w-14 h-14 bg-white bg-opacity-10 rounded-full flex items-center justify-center mb-3">
-          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round"></path>
-          </svg>
-        </div>
-        <div class="text-sm font-bold">View All</div>
-        <div class="text-xs opacity-75">{{ branches.length }} Audits</div>
-      </div>
-    </div>
-
-    <!-- Performance Overview Cards -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
-      <!-- Compliance Metrics -->
-      <div class="bg-white rounded-2xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-          <span class="mr-3">📊</span> Compliance Metrics
-        </h3>
-        <div class="space-y-5">
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">5-Second Greeting</span>
-              <span class="text-sm font-bold text-green-600">{{ greetingRate() }}%</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="bg-green-500 h-3 rounded-full" [style.width.%]="greetingRate()"></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">QR Code Visibility</span>
-              <span class="text-sm font-bold text-blue-600">{{ qrVisibilityRate() }}%</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="bg-blue-500 h-3 rounded-full" [style.width.%]="qrVisibilityRate()"></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">Clean Showcase</span>
-              <span class="text-sm font-bold text-indigo-600">{{ cleanShowcaseRate() }}%</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="bg-indigo-500 h-3 rounded-full" [style.width.%]="cleanShowcaseRate()"></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">Uniform Compliance</span>
-              <span class="text-sm font-bold text-purple-600">{{ uniformComplianceRate() }}%</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="bg-purple-500 h-3 rounded-full" [style.width.%]="uniformComplianceRate()"></div>
-            </div>
-          </div>
-
-          <div>
-            <div class="flex justify-between items-center mb-2">
-              <span class="text-sm font-medium text-gray-700">Staff Behavior</span>
-              <span class="text-sm font-bold text-amber-600">{{ staffBehaviorRate() }}%</span>
-            </div>
-            <div class="w-full bg-gray-200 rounded-full h-3">
-              <div class="bg-amber-500 h-3 rounded-full" [style.width.%]="staffBehaviorRate()"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Top & Bottom Performers -->
-      <div class="bg-white rounded-2xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-          <span class="mr-3">🏅</span> Performance Leaders
-        </h3>
-
-        <!-- Top Performer -->
-        <div *ngIf="highestRated()" class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 mb-4 border-2 border-green-200">
-          <div class="flex items-center mb-3">
-            <span class="text-2xl mr-2">🥇</span>
-            <div>
-              <div class="text-xs font-bold text-green-700 uppercase">Top Performer</div>
-              <div class="text-base font-bold text-gray-900">{{ getStoreName(highestRated()!) }}</div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-600">Hygiene</div>
-              <div class="text-2xl font-bold text-green-700">{{ getOverallHygiene(highestRated()!) }}</div>
-              <div class="text-xs text-gray-500">/5</div>
-            </div>
-            <div class="bg-white rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-600">Experience</div>
-              <div class="text-2xl font-bold text-blue-700">{{ getFinalScoresOverallExperience(highestRated()!) }}</div>
-              <div class="text-xs text-gray-500">/10</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom Performer -->
-        <div *ngIf="lowestRated()" class="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-4 border-2 border-red-200">
-          <div class="flex items-center mb-3">
-            <span class="text-2xl mr-2">⚠️</span>
-            <div>
-              <div class="text-xs font-bold text-red-700 uppercase">Needs Attention</div>
-              <div class="text-base font-bold text-gray-900">{{ getStoreName(lowestRated()!) }}</div>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-white rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-600">Hygiene</div>
-              <div class="text-2xl font-bold text-red-700">{{ getOverallHygiene(lowestRated()!) }}</div>
-              <div class="text-xs text-gray-500">/5</div>
-            </div>
-            <div class="bg-white rounded-lg p-3 text-center">
-              <div class="text-xs text-gray-600">Experience</div>
-              <div class="text-2xl font-bold text-orange-700">{{ getFinalScoresOverallExperience(lowestRated()!) }}</div>
-              <div class="text-xs text-gray-500">/10</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Latest Audit Spotlight -->
-      <div *ngIf="lastVisit()" class="bg-white rounded-2xl shadow-lg p-6">
-        <h3 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
-          <span class="mr-3">🔍</span> Latest Audit
-        </h3>
-
-        <div class="space-y-4">
-          <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200">
-            <div class="font-bold text-gray-900 mb-1">{{ getStoreName(lastVisit()!) }}</div>
-            <div class="text-xs text-gray-600">{{ getCity(lastVisit()!) }} • {{ getDateOfVisit(lastVisit()!) }}</div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-              <div class="text-xs text-gray-600 mb-1">Hygiene</div>
-              <div class="text-3xl font-bold text-green-700">{{ getOverallHygiene(lastVisit()!) }}</div>
-            </div>
-            <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-              <div class="text-xs text-gray-600 mb-1">Experience</div>
-              <div class="text-3xl font-bold text-blue-700">{{ getFinalScoresOverallExperience(lastVisit()!) }}</div>
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
-              <span class="text-xs text-gray-700">5s Greeting</span>
-              <span class="text-xs font-bold" [ngClass]="getYesNoClass(getGreetedWithin5Seconds(lastVisit()!))">
-                {{ getGreetedWithin5Seconds(lastVisit()!) === 'Yes' ? '✓ Yes' : '✗ No' }}
-              </span>
-            </div>
-            <!-- You can add more key checklist items here -->
-          </div>
-
-          <div class="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-            <div class="text-xs font-medium text-yellow-800 mb-1">🌟 Impressed Most:</div>
-            <div class="text-xs text-gray-700 italic">"{{ getWhatImpressedYouMost(lastVisit()!) }}"</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Audits Table -->
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
-      <div class="p-6 border-b">
-        <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-bold text-gray-900">Recent Audits</h2>
-          <button (click)="exportToCSV()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition">
-            Export CSV
+      <!-- No Data State -->
+      <div *ngIf="!isLoading && !isDataLoaded()" class="flex flex-col items-center justify-center h-[80vh]">
+        <div class="text-center p-8 bg-white rounded-2xl shadow-lg border border-gray-100 max-w-md mx-auto">
+          <div class="text-6xl mb-4">📊</div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">No Audit Data Available</h2>
+          <p class="text-gray-500 mb-6">Please check the Google Sheet connection or add audit records.</p>
+          <button (click)="fetchBranches()"
+            class="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md">
+            Retry Connection
           </button>
         </div>
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Store</th>
-              <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase">Date</th>
-              <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase">Hygiene</th>
-              <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase">Experience</th>
-              <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase">Status</th>
-              <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase">Action</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200">
-            <tr *ngFor="let branch of branches | slice:0:6" class="hover:bg-gray-50 transition">
-              <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900">{{ getStoreName(branch) }}</div>
-                <div class="text-xs text-gray-500">{{ getCity(branch) }}</div>
-              </td>
-              <td class="px-6 py-4">
-                <div class="text-sm text-gray-900">{{ getDateOfVisit(branch) }}</div>
-                <div class="text-xs text-gray-500">{{ getTimeOfVisit(branch) }}</div>
-              </td>
-              <td class="px-6 py-4 text-center">
-                <span class="inline-flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg"
-                      [ngClass]="getHygieneScoreClass(getOverallHygiene(branch))">
-                  {{ getOverallHygiene(branch) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-center">
-                <span class="inline-flex items-center justify-center w-12 h-12 rounded-full font-bold text-lg"
-                      [ngClass]="getExperienceScoreClass(getFinalScoresOverallExperience(branch))">
-                  {{ getFinalScoresOverallExperience(branch) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-center">
-                <span class="px-3 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="getStaffBehaviorClass(getStaffBehavior(branch))">
-                  {{ getStaffBehavior(branch) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-center">
-                <button  class="text-blue-600 hover:text-blue-800 font-medium text-sm">
-                  View →
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <!-- MAIN DASHBOARD -->
+      <div *ngIf="!isLoading && isDataLoaded() && !showAllBranches" class="fade-in space-y-6">
 
-      <div class="p-6 bg-gray-50 border-t">
-        <button (click)="showAllBranches = true" class="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium transition">
-          View All {{ branches.length }} Audits
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ALL AUDITS DETAILED VIEW -->
-  <div *ngIf="!isLoading && isDataLoaded() && showAllBranches" class="fade-in">
-
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h2 class="text-3xl font-bold text-gray-900">📋 Complete Audit History</h2>
-        <p class="text-gray-600 mt-2">Detailed view of all {{ branches.length }} store audits</p>
-      </div>
-      <button (click)="showAllBranches = false; scrollToTop()"
-              class="px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition shadow-lg font-medium flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path d="M10 19l-7-7m0 0l7-7m-7 7h18" stroke-width="2" stroke-linecap="round"></path>
-        </svg>
-        Back to Dashboard
-      </button>
-    </div>
-
-    <!-- Summary Statistics -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <div class="bg-white rounded-xl p-6 shadow-lg text-center border-t-4 border-gray-500">
-        <div class="text-4xl font-bold text-gray-900">{{ branches.length }}</div>
-        <div class="text-sm text-gray-600 mt-2">Total Audits</div>
-      </div>
-      <div class="bg-white rounded-xl p-6 shadow-lg text-center border-t-4 border-green-500">
-        <div class="text-4xl font-bold text-green-700">{{ averageScore() }}/5</div>
-        <div class="text-sm text-gray-600 mt-2">Avg Hygiene</div>
-      </div>
-      <div class="bg-white rounded-xl p-6 shadow-lg text-center border-t-4 border-blue-500">
-        <div class="text-4xl font-bold text-blue-700">{{ averageExperience() }}/10</div>
-        <div class="text-sm text-gray-600 mt-2">Avg Experience</div>
-      </div>
-      <div class="bg-white rounded-xl p-6 shadow-lg text-center border-t-4 border-purple-500">
-        <div class="text-4xl font-bold text-purple-700">{{ greetingRate() }}%</div>
-        <div class="text-sm text-gray-600 mt-2">Greeting Rate</div>
-      </div>
-    </div>
-
-    <!-- Detailed Audit Cards -->
-    <div class="space-y-6">
-      <div *ngFor="let branch of branches; let i = index" class="bg-white rounded-2xl shadow-xl border-2 border-gray-100 overflow-hidden hover:shadow-2xl transition-all">
-        <!-- Card Header -->
-        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-5 text-white">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-              <div class="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center text-xl font-bold">
-                #{{ i + 1 }}
-              </div>
-              <div>
-                <h3 class="text-2xl font-bold">{{ getStoreName(branch) }}</h3>
-                <p class="text-blue-100 text-sm">{{ getCity(branch) }} • {{ getDateOfVisit(branch) }}</p>
-              </div>
-            </div>
-            <div class="text-right">
-              <div class="flex gap-2 mb-2">
-                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-lg text-sm">
-                  H: {{ getOverallHygiene(branch) }}/5
-                </span>
-                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-lg text-sm">
-                  E: {{ getFinalScoresOverallExperience(branch) }}/10
-                </span>
-              </div>
-              <div class="text-xs opacity-75">{{ getTimeOfVisit(branch) }}</div>
-            </div>
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
+              📊 Mystery Dashboard
+            </h1>
+            <p class="text-sm text-gray-500 mt-1">Review store performance and compliance insights</p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button (click)="exportToCSV()"
+              class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition text-sm font-semibold flex items-center shadow-sm">
+              <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+              </svg>
+              Export Report
+            </button>
+            <button (click)="showAllBranches = true"
+              class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition text-sm font-semibold flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 duration-200">
+              View All Details
+              <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
-        <!-- Card Body - you can expand this section with more detailed fields -->
-        <div class="p-6">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="space-y-4">
-              <div class="text-center p-4 bg-green-50 rounded-xl">
-                <div class="text-sm text-green-700">Hygiene Score</div>
-                <div class="text-4xl font-bold text-green-800">{{ getOverallHygiene(branch) }}/5</div>
+        <!-- Key Metrics Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+          <!-- Total Audits -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-xl">🏪</div>
+            </div>
+            <div class="text-3xl font-extrabold text-gray-900 mb-1">{{ branches.length }}</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Audits</div>
+          </div>
+          <!-- Avg Hygiene -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center text-xl">🧼</div>
+            </div>
+            <div class="text-3xl font-extrabold text-gray-900 mb-1">{{ averageScore() }}<span
+                class="text-sm text-gray-400 font-normal">/5</span></div>
+            <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2 mt-1">
+              <div class="bg-green-500 h-1.5 rounded-full" [style.width.%]="(averageScore()/5)*100"></div>
+            </div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wide">Avg. Hygiene</div>
+          </div>
+          <!-- Avg Experience -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center text-xl">⭐</div>
+            </div>
+            <div class="text-3xl font-extrabold text-gray-900 mb-1">{{ averageExperience() }}<span
+                class="text-sm text-gray-400 font-normal">/10</span></div>
+            <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2 mt-1">
+              <div class="bg-purple-500 h-1.5 rounded-full" [style.width.%]="(averageExperience()/10)*100"></div>
+            </div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wide">Avg. Experience</div>
+          </div>
+          <!-- Top Performer -->
+          <div *ngIf="highestRated()"
+            class="xl:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 shadow-lg text-white relative overflow-hidden group">
+            <div
+              class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700">
+            </div>
+            <div class="flex items-start justify-between relative z-10">
+              <div>
+                <div class="flex items-center mb-2 space-x-2">
+                  <span class="text-lg">🏆</span>
+                  <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-wider">Top
+                    Store</span>
+                </div>
+                <div class="text-xl font-bold truncate max-w-[180px] leading-tight">{{ getStoreName(highestRated()!) }}
+                </div>
+                <div class="text-sm text-blue-100 mb-3">{{ getCity(highestRated()!) }}</div>
+                <div class="flex gap-3">
+                  <div class="bg-black/20 rounded px-2 py-1 text-xs">
+                    <span class="opacity-70">Hygiene</span> <span class="font-bold ml-1">{{
+                      getOverallHygiene(highestRated()!) }}</span>
+                  </div>
+                  <div class="bg-black/20 rounded px-2 py-1 text-xs">
+                    <span class="opacity-70">Exp</span> <span class="font-bold ml-1">{{
+                      getFinalScoresOverallExperience(highestRated()!) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
-
-            <div class="space-y-4">
-              <div class="text-center p-4 bg-blue-50 rounded-xl">
-                <div class="text-sm text-blue-700">Experience Score</div>
-                <div class="text-4xl font-bold text-blue-800">{{ getFinalScoresOverallExperience(branch) }}/10</div>
-              </div>
+          </div>
+          <!-- Latest Audit -->
+          <div *ngIf="lastVisit()"
+            class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer border-l-4 border-l-indigo-500"
+            (click)="showAllBranches = true">
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-xs font-bold text-indigo-600 uppercase">Just Audited</span>
+              <span class="text-xs text-gray-400">{{ getDateOfVisit(lastVisit()!) }}</span>
             </div>
+            <div class="font-bold text-gray-900 truncate">{{ getStoreName(lastVisit()!) }}</div>
+            <div class="text-xs text-gray-500 mt-1 mb-3">{{ getTimeOfVisit(lastVisit()!) }}</div>
+            <button
+              class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-md font-semibold hover:bg-indigo-100 transition w-full">View
+              Details</button>
+          </div>
+        </div>
 
-            <div class="space-y-4">
-              <div class="text-center p-4 bg-purple-50 rounded-xl">
-                <div class="text-sm text-purple-700">Staff Behavior</div>
-                <div class="text-xl font-bold" [ngClass]="getStaffBehaviorClass(getStaffBehavior(branch))">
-                  {{ getStaffBehavior(branch) }}
+        <!-- Performance & Charts -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          <!-- Key Metrics List -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+              <span class="mr-2">📈</span> Performance KPIs
+            </h3>
+            <div class="space-y-6">
+              <div *ngFor="let metric of [
+                {label: '5-Second Greeting', val: greetingRate(), color: 'green'},
+                {label: 'QR Code Visibility', val: qrVisibilityRate(), color: 'blue'},
+                {label: 'Clean Showcases', val: cleanShowcaseRate(), color: 'indigo'},
+                 {label: 'Staff Grooming', val: uniformComplianceRate(), color: 'purple'},
+                 {label: 'Staff Behavior', val: staffBehaviorRate(), color: 'amber'}
+              ]">
+                <div class="flex justify-between items-center mb-2">
+                  <span class="text-xs font-semibold text-gray-600 uppercase">{{ metric.label }}</span>
+                  <span class="text-sm font-bold text-gray-900">{{ metric.val }}%</span>
+                </div>
+                <div class="w-full bg-gray-100 rounded-full h-2">
+                  <div [class]="'h-2 rounded-full bg-' + metric.color + '-500'" [style.width.%]="metric.val"></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="mt-6 bg-gray-50 p-4 rounded-xl">
-            <p class="text-sm font-medium text-gray-700">What impressed most:</p>
-            <p class="text-gray-800 italic mt-1">"{{ getWhatImpressedYouMost(branch) }}"</p>
+          <!-- Top/Bottom Leaderboard -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+              <span class="mr-2">🏅</span> Leaderboard
+            </h3>
+
+            <div class="space-y-4 flex-1">
+              <!-- Winner -->
+              <div *ngIf="highestRated()" class="bg-green-50 rounded-xl p-4 border border-green-100">
+                <div class="flex items-center mb-3">
+                  <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-lg shadow-sm mr-3">🥇
+                  </div>
+                  <div>
+                    <div class="text-[10px] font-bold text-green-700 uppercase tracking-wider">Top Store</div>
+                    <div class="text-sm font-bold text-gray-900">{{ getStoreName(highestRated()!) }}</div>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center bg-white/50 rounded-lg p-2">
+                  <div class="text-center flex-1 border-r border-green-100">
+                    <div class="text-[10px] text-gray-500">Hygiene</div>
+                    <div class="font-bold text-green-700">{{ getOverallHygiene(highestRated()!) }}</div>
+                  </div>
+                  <div class="text-center flex-1">
+                    <div class="text-[10px] text-gray-500">Exp.</div>
+                    <div class="font-bold text-green-700">{{ getFinalScoresOverallExperience(highestRated()!) }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Attention Needed -->
+              <div *ngIf="lowestRated()" class="bg-red-50 rounded-xl p-4 border border-red-100">
+                <div class="flex items-center mb-3">
+                  <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-lg shadow-sm mr-3">⚠️
+                  </div>
+                  <div>
+                    <div class="text-[10px] font-bold text-red-700 uppercase tracking-wider">Needs Action</div>
+                    <div class="text-sm font-bold text-gray-900">{{ getStoreName(lowestRated()!) }}</div>
+                  </div>
+                </div>
+                <div class="flex justify-between items-center bg-white/50 rounded-lg p-2">
+                  <div class="text-center flex-1 border-r border-red-100">
+                    <div class="text-[10px] text-gray-500">Hygiene</div>
+                    <div class="font-bold text-red-700">{{ getOverallHygiene(lowestRated()!) }}</div>
+                  </div>
+                  <div class="text-center flex-1">
+                    <div class="text-[10px] text-gray-500">Exp.</div>
+                    <div class="font-bold text-red-700">{{ getFinalScoresOverallExperience(lowestRated()!) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Latest Audit Detail -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
+            <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+              <span class="mr-2">🔍</span> Just In
+            </h3>
+
+            <div *ngIf="lastVisit()" class="flex-1 flex flex-col">
+              <div class="bg-gray-50 rounded-xl p-4 mb-4 border border-gray-100">
+                <div class="font-bold text-gray-900 text-lg mb-1">{{ getStoreName(lastVisit()!) }}</div>
+                <div class="text-xs text-gray-500 flex items-center">
+                  <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  </svg>
+                  {{ getCity(lastVisit()!) }}
+                  <span class="mx-2">•</span>
+                  {{ getDateOfVisit(lastVisit()!) }}
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <div class="bg-green-50 rounded-lg p-3 text-center">
+                  <div class="text-[10px] text-green-700 uppercase font-bold">Hygiene</div>
+                  <div class="text-2xl font-black text-green-700">{{ getOverallHygiene(lastVisit()!) }}</div>
+                </div>
+                <div class="bg-blue-50 rounded-lg p-3 text-center">
+                  <div class="text-[10px] text-blue-700 uppercase font-bold">Experience</div>
+                  <div class="text-2xl font-black text-blue-700">{{ getFinalScoresOverallExperience(lastVisit()!) }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-auto bg-amber-50 rounded-xl p-4 border border-amber-100">
+                <div class="text-[10px] font-bold text-amber-800 uppercase mb-1">Passionate Note</div>
+                <p class="text-xs text-gray-700 italic leading-relaxed">"{{ getWhatImpressedYouMost(lastVisit()!) }}"
+                </p>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- Recent Table (Preview) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-gray-900">Recent Audit Log</h3>
+            <button (click)="showAllBranches = true"
+              class="text-sm text-blue-600 font-semibold hover:text-blue-800 hover:underline">View All</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full">
+              <thead class="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Store</th>
+                  <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Scores</th>
+                  <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let branch of branches | slice:0:5" class="hover:bg-gray-50/50 transition">
+                  <td class="px-6 py-4">
+                    <div class="text-sm font-bold text-gray-900">{{ getStoreName(branch) }}</div>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-600">{{ getDateOfVisit(branch) }}</td>
+                  <td class="px-6 py-4 text-center">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
+                      {{ getOverallHygiene(branch) }}/5
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-center">
+                    <button
+                      class="text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-md">Details</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
-    </div>
 
-    <div class="mt-10 text-center">
-      <button (click)="exportToCSV()" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-lg font-bold text-lg">
-        Export Complete Report
-      </button>
-    </div>
+      <!-- ALL AUDITS DETAILED VIEW -->
+      <div *ngIf="!isLoading && isDataLoaded() && showAllBranches" class="fade-in">
 
+        <!-- Header Actions -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+          <div>
+            <nav class="flex mb-2" aria-label="Breadcrumb">
+              <ol class="inline-flex items-center space-x-1 text-xs font-medium text-gray-500">
+                <li class="inline-flex items-center"><span class="cursor-pointer hover:text-gray-900"
+                    (click)="showAllBranches = false">Dashboard</span></li>
+                <li><span class="mx-1 text-gray-300">/</span></li>
+                <li><span class="text-gray-900">Audit History</span></li>
+              </ol>
+            </nav>
+            <h2 class="text-2xl font-bold text-gray-900">Entire Audit Log</h2>
+            <p class="text-sm text-gray-500">{{ branches.length }} total records found</p>
+          </div>
+          <div class="flex gap-3">
+            <button (click)="showAllBranches = false; scrollToTop()"
+              class="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-semibold shadow-sm">Back</button>
+            <button (click)="exportToCSV()"
+              class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-bold shadow-md">Export
+              Data</button>
+          </div>
+        </div>
+
+        <!-- List/Table -->
+        <div class="bg-gray-100 rounded-2xl p-2 md:p-4 min-h-[60vh]">
+          <div class="grid gap-3">
+
+            <!-- Mobile/Desktop Cards (using similar style to settings) -->
+            <div *ngFor="let branch of branches; let i = index"
+              class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all group">
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+
+                <!-- ID & Store -->
+                <div class="md:col-span-3 flex items-center">
+                  <span
+                    class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 text-xs font-bold flex items-center justify-center mr-3 flex-shrink-0">{{
+                    i + 1 }}</span>
+                  <div>
+                    <div class="font-bold text-gray-900 leading-tight">{{ getStoreName(branch) }}</div>
+                    <div class="text-xs text-gray-500 mt-0.5">{{ getCity(branch) }}</div>
+                  </div>
+                </div>
+
+                <!-- Date -->
+                <div class="md:col-span-2 flex items-center text-sm text-gray-600">
+                  <span class="md:hidden w-20 text-xs text-gray-400 font-bold uppercase">Date:</span>
+                  {{ getDateOfVisit(branch) }}
+                </div>
+
+                <!-- Shopper -->
+                <div class="md:col-span-2 flex items-center text-sm text-gray-600">
+                  <span class="md:hidden w-20 text-xs text-gray-400 font-bold uppercase">Shopper:</span>
+                  {{ getMysteryShopperName(branch) }}
+                </div>
+
+                <!-- Scores -->
+                <div class="md:col-span-3 flex items-center gap-4">
+                  <span class="md:hidden w-20 text-xs text-gray-400 font-bold uppercase">Scores:</span>
+                  <div class="flex items-center gap-2">
+                    <div class="flex flex-col items-center">
+                      <span class="text-[10px] text-gray-400 uppercase">Hyg</span>
+                      <span class="text-sm font-bold" [ngClass]="getHygieneScoreClass(getOverallHygiene(branch))">{{
+                        getOverallHygiene(branch) }}</span>
+                    </div>
+                    <div class="w-px h-6 bg-gray-200 mx-1"></div>
+                    <div class="flex flex-col items-center">
+                      <span class="text-[10px] text-gray-400 uppercase">Exp</span>
+                      <span class="text-sm font-bold"
+                        [ngClass]="getExperienceScoreClass(getFinalScoresOverallExperience(branch))">{{
+                        getFinalScoresOverallExperience(branch) }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Highlight (Desktop only mostly) -->
+                <div class="md:col-span-2 text-right">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
+                    {{ getStaffBehavior(branch) }}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
   </div>
 </div>

@@ -6,14 +6,14 @@ interface BranchData {
   City: string;
   'Date of Visit': string;
   'Mystery Shopper Name': string;
-  'Overall Hygiene':  number;
+  'Overall Hygiene': number;
   'Staff Behavior': string;
   'Greeted within 5 seconds': string;
-  'Showcases clean':  string;
+  'Showcases clean': string;
   'Music volume appropriate': string;
   'Lighting appealing': string;
   'AC comfortable': string;
-  'Training Focus for this store:'?:  string;
+  'Training Focus for this store:'?: string;
   [key: string]: any;
 }
 
@@ -23,47 +23,47 @@ interface BranchData {
   styleUrls: ['./settings.component.css']
 })
 export class SettingsComponent implements OnInit {
-  
+
   // Data
   branches: BranchData[] = [];
   filteredBranches: BranchData[] = [];
-  
+
   // Loading states
   loading = false;
   saving = false;
-  
+
   // Modal state
   showModal = false;
   isEditMode = false;
-  selectedBranchIndex:  number = -1;
-  
+  selectedBranchIndex: number = -1;
+
   // Form data
-  branchForm:  BranchData = this.getEmptyBranch();
-  
+  branchForm: BranchData = this.getEmptyBranch();
+
   // Search and filter
   searchTerm = '';
   filterCity = '';
   filterHygiene = '';
   sortBy = 'date';
-  sortDirection:  'asc' | 'desc' = 'desc';
-  
+  sortDirection: 'asc' | 'desc' = 'desc';
+
   // Pagination
   currentPage = 1;
   itemsPerPage = 10;
-  
+
   // Available options
-  cities:  string[] = [];
+  cities: string[] = [];
   shoppers: string[] = [];
-  
+
   // Google Sheets URLs
   csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTcCmE7dqToG0ZUhyzHDRPGmcWgIgCrQMhWnT2JZ4MexaBvhCb9kHPxXT2sfCl7mz2YopDn4kU7QnPh/pub?gid=0&single=true&output=csv';
-  
+
   // Google Sheets API configuration (you'll need to set these up)
   private readonly SPREADSHEET_ID = '1Bgrmqzg0fujWKQLA9SeBhQWjPFlzkzqxzbLEWcEr6ps'; // Replace with your actual spreadsheet ID
   private readonly API_KEY = 'AIzaSyD-9QkwaiXAsP0HhGe6-elcWqjpO9VtLJU'; // Replace with your Google Sheets API key
   private readonly SHEET_NAME = 'Sheet1'; // Replace with your sheet name
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.fetchBranches();
@@ -74,18 +74,18 @@ export class SettingsComponent implements OnInit {
    */
   fetchBranches(): void {
     this.loading = true;
-    
+
     this.http.get(this.csvUrl, { responseType: 'text' }).subscribe({
       next: (csv: string) => {
         this.branches = this.csvToJson(csv);
         this.filteredBranches = [... this.branches];
-        this. extractOptions();
+        this.extractOptions();
         this.applyFilters();
         this.loading = false;
         console.log('Loaded branches:', this.branches.length);
       },
       error: (error) => {
-        console. error('Error fetching branches:', error);
+        console.error('Error fetching branches:', error);
         this.branches = [];
         this.filteredBranches = [];
         this.loading = false;
@@ -100,9 +100,9 @@ export class SettingsComponent implements OnInit {
   csvToJson(csv: string): BranchData[] {
     const lines = csv.split('\n').filter(l => l.trim().length > 0);
     if (lines.length === 0) return [];
-    
+
     const headers = lines[0].split(',').map(h => h.trim());
-    
+
     return lines.slice(1).map(line => {
       const values = line.split(',');
       const obj: any = {};
@@ -130,22 +130,22 @@ export class SettingsComponent implements OnInit {
     // Search
     if (this.searchTerm) {
       const term = this.searchTerm.toLowerCase();
-      result = result.filter(b => 
-        b. StoreName?. toLowerCase().includes(term) ||
-        b. City?.toLowerCase().includes(term) ||
+      result = result.filter(b =>
+        b.StoreName?.toLowerCase().includes(term) ||
+        b.City?.toLowerCase().includes(term) ||
         b['Mystery Shopper Name']?.toLowerCase().includes(term)
       );
     }
 
     // Filter by city
     if (this.filterCity) {
-      result = result.filter(b => b.City === this. filterCity);
+      result = result.filter(b => b.City === this.filterCity);
     }
 
     // Filter by hygiene
     if (this.filterHygiene) {
-      const hygiene = parseFloat(this. filterHygiene);
-      result = result.filter(b => parseFloat(b['Overall Hygiene']?. toString() || '0') >= hygiene);
+      const hygiene = parseFloat(this.filterHygiene);
+      result = result.filter(b => parseFloat(b['Overall Hygiene']?.toString() || '0') >= hygiene);
     }
 
     // Sort
@@ -153,19 +153,19 @@ export class SettingsComponent implements OnInit {
       let compareA: any, compareB: any;
 
       switch (this.sortBy) {
-        case 'date': 
-          compareA = new Date(a['Date of Visit'] || 0).getTime();
-          compareB = new Date(b['Date of Visit'] || 0).getTime();
+        case 'date':
+          compareA = this.parseDate(a['Date of Visit'] || '').getTime();
+          compareB = this.parseDate(b['Date of Visit'] || '').getTime();
           break;
         case 'name':
-          compareA = a. StoreName || '';
-          compareB = b. StoreName || '';
+          compareA = a.StoreName || '';
+          compareB = b.StoreName || '';
           break;
-        case 'hygiene': 
+        case 'hygiene':
           compareA = parseFloat(a['Overall Hygiene']?.toString() || '0');
           compareB = parseFloat(b['Overall Hygiene']?.toString() || '0');
           break;
-        case 'city': 
+        case 'city':
           compareA = a.City || '';
           compareB = b.City || '';
           break;
@@ -174,7 +174,7 @@ export class SettingsComponent implements OnInit {
       }
 
       if (compareA < compareB) return this.sortDirection === 'asc' ? -1 : 1;
-      if (compareA > compareB) return this.sortDirection === 'asc' ? 1 :  -1;
+      if (compareA > compareB) return this.sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
 
@@ -192,9 +192,9 @@ export class SettingsComponent implements OnInit {
 
       if (isUpdate && rowIndex !== undefined) {
         // Update existing row
-        const range = `${this.SHEET_NAME}!A${rowIndex + 2}: ${String. fromCharCode(65 + headers.length - 1)}${rowIndex + 2}`;
+        const range = `${this.SHEET_NAME}!A${rowIndex + 2}: ${String.fromCharCode(65 + headers.length - 1)}${rowIndex + 2}`;
         const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.SPREADSHEET_ID}/values/${range}?valueInputOption=RAW&key=${this.API_KEY}`;
-        
+
         const updateData = {
           values: [values]
         };
@@ -205,7 +205,7 @@ export class SettingsComponent implements OnInit {
         // Append new row
         const range = `${this.SHEET_NAME}!A: A`;
         const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${this.SPREADSHEET_ID}/values/${range}: append?valueInputOption=RAW&key=${this.API_KEY}`;
-        
+
         const appendData = {
           values: [values]
         };
@@ -232,14 +232,14 @@ export class SettingsComponent implements OnInit {
    * Get total pages
    */
   get totalPages(): number {
-    return Math.ceil(this.filteredBranches.length / this. itemsPerPage);
+    return Math.ceil(this.filteredBranches.length / this.itemsPerPage);
   }
 
   /**
    * Change page
    */
   changePage(page: number): void {
-    if (page >= 1 && page <= this. totalPages) {
+    if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
     }
   }
@@ -260,7 +260,7 @@ export class SettingsComponent implements OnInit {
   openEditModal(branch: BranchData, index: number): void {
     this.isEditMode = true;
     this.selectedBranchIndex = index;
-    this. branchForm = { ...branch }; // Create a copy
+    this.branchForm = { ...branch }; // Create a copy
     this.showModal = true;
   }
 
@@ -269,7 +269,7 @@ export class SettingsComponent implements OnInit {
    */
   closeModal(): void {
     this.showModal = false;
-    this. branchForm = this.getEmptyBranch();
+    this.branchForm = this.getEmptyBranch();
     this.selectedBranchIndex = -1;
   }
 
@@ -306,7 +306,7 @@ export class SettingsComponent implements OnInit {
         }
       }
 
-      if (! success) {
+      if (!success) {
         alert('Error saving to Google Sheets. Please try again.');
       } else {
         // Refresh the display
@@ -324,10 +324,10 @@ export class SettingsComponent implements OnInit {
   /**
    * Delete branch from Google Sheets
    */
-  async deleteBranch(index:  number): Promise<void> {
+  async deleteBranch(index: number): Promise<void> {
     const branch = this.filteredBranches[index];
     const confirmed = confirm(`Are you sure you want to delete "${branch.StoreName}"?`);
-    
+
     if (confirmed) {
       try {
         const actualIndex = this.branches.findIndex(b => b === branch);
@@ -335,9 +335,9 @@ export class SettingsComponent implements OnInit {
           // Note: Google Sheets API doesn't have a direct delete row method
           // You would need to implement this by clearing the row or using batch update
           // For now, we'll remove from local array and warn user
-          
+
           console.warn('Note: Direct row deletion from Google Sheets requires additional API setup');
-          
+
           this.branches.splice(actualIndex, 1);
           this.applyFilters();
           alert('Branch removed from local view.  Note: You may need to manually remove it from Google Sheets.');
@@ -353,7 +353,7 @@ export class SettingsComponent implements OnInit {
    * Validate form
    */
   validateForm(): boolean {
-    if (! this.branchForm.StoreName?. trim()) {
+    if (!this.branchForm.StoreName?.trim()) {
       alert('Please enter a store name');
       return false;
     }
@@ -365,12 +365,12 @@ export class SettingsComponent implements OnInit {
       alert('Please select a visit date');
       return false;
     }
-    if (!this. branchForm['Mystery Shopper Name']?.trim()) {
+    if (!this.branchForm['Mystery Shopper Name']?.trim()) {
       alert('Please enter a mystery shopper name');
       return false;
     }
-    
-    const hygiene = parseFloat(this. branchForm['Overall Hygiene']?.toString() || '0');
+
+    const hygiene = parseFloat(this.branchForm['Overall Hygiene']?.toString() || '0');
     if (hygiene < 1 || hygiene > 5) {
       alert('Hygiene score must be between 1 and 5');
       return false;
@@ -410,10 +410,10 @@ export class SettingsComponent implements OnInit {
 
     // Get headers from first branch
     const headers = Object.keys(this.branches[0]);
-    
+
     // Create CSV content
     let csv = headers.join(',') + '\n';
-    
+
     this.branches.forEach(branch => {
       const row = headers.map(header => {
         const value = branch[header] || '';
@@ -425,7 +425,7 @@ export class SettingsComponent implements OnInit {
 
     // Download file
     const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL. createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     link.download = `branches-export-${new Date().toISOString().split('T')[0]}.csv`;
@@ -444,8 +444,8 @@ export class SettingsComponent implements OnInit {
 
     const exportData = {
       exportDate: new Date().toISOString(),
-      totalBranches: this.branches. length,
-      branches: this. branches
+      totalBranches: this.branches.length,
+      branches: this.branches
     };
 
     const dataStr = JSON.stringify(exportData, null, 2);
@@ -482,7 +482,7 @@ export class SettingsComponent implements OnInit {
    */
   toggleSort(field: string): void {
     if (this.sortBy === field) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' :  'asc';
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
       this.sortBy = field;
       this.sortDirection = 'asc';
@@ -500,12 +500,41 @@ export class SettingsComponent implements OnInit {
   }
 
   /**
+   * Parse date helper
+   */
+  private parseDate(dateStr: string): Date {
+    if (!dateStr) return new Date(0);
+
+    // Check if ISO format
+    if (dateStr.includes('-')) {
+      return new Date(dateStr);
+    }
+
+    // Check if DD/MM/YYYY format
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        // Assume DD/MM/YYYY
+        return new Date(
+          parseInt(parts[2]),
+          parseInt(parts[1]) - 1,
+          parseInt(parts[0])
+        );
+      }
+    }
+
+    return new Date(dateStr);
+  }
+
+  /**
    * Format date for display
    */
   formatDate(date: string): string {
     if (!date) return '-';
     try {
-      return new Date(date).toLocaleDateString();
+      const d = this.parseDate(date);
+      if (isNaN(d.getTime())) return date; // Return original string if parsing fails
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     } catch {
       return date;
     }

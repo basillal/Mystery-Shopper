@@ -2,21 +2,35 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
 interface BranchData {
-  'Store Name': string;
-  'City': string;
-  'Date of Visit': string;
-  'Time of Visit': string;
-  'Overall Hygiene': string;
-  'Overall Experience': string;
-  'Greeted within 5 Seconds': string;
-  'QR Code Visibility': string;
-  'Clean Showcase': string;
-  'Uniform Compliance': string;
-  'Staff Behavior': string;
-  'What Impressed You Most': string;
-  'Mystery Shopper Name': string;
-  'Sales Person Name': string;
-  [key: string]: string; // allow extra columns
+  "Timestamp": string;
+  "StoreName": string;
+  "Date of Visit": string;
+  "Time Of Visit": string;
+  "Mystery Shopper Name": string;
+  "Sales Person Name": string;
+  "Lighting appealing": string;
+  "Music volume appropriate": string;
+  "AC comfortable": string;
+  "Showcases clean": string;
+  "Watches aligned": string;
+  "Price tags visible": string;
+  "Watch Handling": string;
+  "Overall Hygiene": string;
+  "Greeted within 5 seconds": string;
+  "Smile & eye contact": string;
+  "Uniform And Grooming": string;
+  "Body Language": string;
+  "Product Knowledge": string;
+  "Options Shown": string;
+  "Up Selling / Cross selling": string;
+  "Asked for Google Review": string;
+  "Google Review QR Visible": string;
+  "Staff Behavior": string;
+  "Final Scores  (Overall Experience)": string;
+  "What impressed you most?": string;
+  "Training Focus for this store:": string;
+  "City": string;
+  [key: string]: string;
 }
 
 @Component({
@@ -31,7 +45,7 @@ export class DashboardComponent implements OnInit {
   isLoading = true;
   showAllBranches = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
     this.fetchBranches();
@@ -43,6 +57,7 @@ export class DashboardComponent implements OnInit {
     this.http.get(this.csvUrl, { responseType: 'text' }).subscribe({
       next: (csv: string) => {
         this.branches = this.csvToJson(csv);
+        console.log("Loaded data:", this.branches);
         this.isLoading = false;
         console.log('Loaded audits:', this.branches.length);
       },
@@ -61,7 +76,7 @@ export class DashboardComponent implements OnInit {
     const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
 
     return lines.slice(1).map(line => {
-      // Better CSV parsing - handles commas inside quotes
+      // Handles commas inside quotes
       const values: string[] = [];
       let current = '';
       let inQuotes = false;
@@ -94,7 +109,7 @@ export class DashboardComponent implements OnInit {
   // ─── Helper Getters ───────────────────────────────────────────────
 
   getStoreName(branch: BranchData): string {
-    return branch['Store Name'] || 'N/A';
+    return branch['StoreName'] || 'N/A';
   }
 
   getCity(branch: BranchData): string {
@@ -106,7 +121,7 @@ export class DashboardComponent implements OnInit {
   }
 
   getTimeOfVisit(branch: BranchData): string {
-    return branch['Time of Visit'] || '';
+    return branch['Time Of Visit'] || '';
   }
 
   getOverallHygiene(branch: BranchData): number {
@@ -114,15 +129,15 @@ export class DashboardComponent implements OnInit {
   }
 
   getFinalScoresOverallExperience(branch: BranchData): number {
-    return Number(branch['Overall Experience']) || 0;
+    return Number(branch['Final Scores  (Overall Experience)']) || 0;
   }
 
   getGreetedWithin5Seconds(branch: BranchData): string {
-    return branch['Greeted within 5 Seconds'] || 'No';
+    return branch['Greeted within 5 seconds'] || 'No';
   }
 
   getWhatImpressedYouMost(branch: BranchData): string {
-    return branch['What Impressed You Most'] || 'Nothing mentioned';
+    return branch['What impressed you most?'] || 'Nothing mentioned';
   }
 
   getMysteryShopperName(branch: BranchData): string {
@@ -168,42 +183,57 @@ export class DashboardComponent implements OnInit {
   lastVisit(): BranchData | null {
     if (!this.branches.length) return null;
     return [...this.branches].sort((a, b) => {
-      const dateA = new Date(a['Date of Visit'] || '1900-01-01');
-      const dateB = new Date(b['Date of Visit'] || '1900-01-01');
+      // Helper to parse DD/MM/YYYY
+      const parseDate = (dateStr: string) => {
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+          return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        }
+        return new Date('1900-01-01');
+      };
+      const dateA = parseDate(a['Date of Visit'] || '');
+      const dateB = parseDate(b['Date of Visit'] || '');
       return dateB.getTime() - dateA.getTime();
     })[0];
   }
 
   greetingRate(): number {
-    const yes = this.branches.filter(b => b['Greeted within 5 Seconds']?.trim().toLowerCase() === 'yes').length;
+    const yes = this.branches.filter(b => b['Greeted within 5 seconds']?.trim().toLowerCase().startsWith('yes')).length;
     return this.branches.length ? Math.round((yes / this.branches.length) * 100) : 0;
   }
 
   // Add more percentage methods as needed...
   qrVisibilityRate(): number {
-    const yes = this.branches.filter(b => b['QR Code Visibility']?.trim().toLowerCase() === 'yes').length;
+    const yes = this.branches.filter(b => b['Google Review QR Visible']?.trim().toLowerCase() === 'yes').length;
     return this.branches.length ? Math.round((yes / this.branches.length) * 100) : 0;
   }
 
   cleanShowcaseRate(): number {
-    const yes = this.branches.filter(b => b['Clean Showcase']?.trim().toLowerCase() === 'yes').length;
+    const yes = this.branches.filter(b => b['Showcases clean']?.trim().toLowerCase() === 'yes').length;
     return this.branches.length ? Math.round((yes / this.branches.length) * 100) : 0;
   }
 
   uniformComplianceRate(): number {
-    const yes = this.branches.filter(b => b['Uniform Compliance']?.trim().toLowerCase() === 'yes').length;
+    // Logic might need adjustment based on data content, e.g. "Perfect", "Well dressed", etc.
+    const yes = this.branches.filter(b => {
+      const val = b['Uniform And Grooming']?.toLowerCase() || '';
+      return val.includes('perfect') || val.includes('well dressed') || val.includes('good');
+    }).length;
     return this.branches.length ? Math.round((yes / this.branches.length) * 100) : 0;
   }
 
   staffBehaviorRate(): number {
-    const good = this.branches.filter(b => ['excellent', 'good'].includes(b['Staff Behavior']?.trim().toLowerCase())).length;
+    const good = this.branches.filter(b => {
+      const val = b['Staff Behavior']?.toLowerCase() || '';
+      return val.includes('excellent') || val.includes('good');
+    }).length;
     return this.branches.length ? Math.round((good / this.branches.length) * 100) : 0;
   }
 
   // ─── Styling Helpers ───────────────────────────────────────────────
 
   getYesNoClass(value: string): string {
-    return value?.toLowerCase() === 'yes' ? 'text-green-600' : 'text-red-600';
+    return value?.trim().toLowerCase().startsWith('yes') ? 'text-green-600' : 'text-red-600';
   }
 
   getHygieneScoreClass(score: number): string {
@@ -220,9 +250,8 @@ export class DashboardComponent implements OnInit {
 
   getStaffBehaviorClass(value: string): string {
     const v = value?.toLowerCase();
-    if (v === 'excellent') return 'bg-green-100 text-green-800';
-    if (v === 'good') return 'bg-blue-100 text-blue-800';
-    if (v === 'average') return 'bg-yellow-100 text-yellow-800';
+    if (v.includes('excellent') || v.includes('good')) return 'bg-green-100 text-green-800';
+    if (v.includes('average')) return 'bg-yellow-100 text-yellow-800';
     return 'bg-red-100 text-red-800';
   }
 
