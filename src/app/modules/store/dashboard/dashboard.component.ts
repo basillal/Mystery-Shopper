@@ -79,6 +79,8 @@ export class DashboardComponent implements OnInit {
 
     this.http.get(this.csvUrl, { responseType: 'text' }).subscribe({
       next: (csv: string) => {
+        console.log("CSV Data:", csv);
+
         this.branches = this.csvToJson(csv);
         console.log("Loaded data:", this.branches);
         this.isLoading = false;
@@ -93,36 +95,65 @@ export class DashboardComponent implements OnInit {
   }
 
   csvToJson(csv: string): BranchData[] {
-    const lines = csv.split('\n').filter(line => line.trim().length > 0);
-    if (lines.length <= 1) return [];
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentVal = '';
+    let inQuotes = false;
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    // Normalize newlines for easier processing
+    const cleanCsv = csv.replace(/\r\n/g, '\n');
 
-    return lines.slice(1).map(line => {
-      // Handles commas inside quotes
-      const values: string[] = [];
-      let current = '';
-      let inQuotes = false;
+    for (let i = 0; i < cleanCsv.length; i++) {
+      const char = cleanCsv[i];
+      const nextChar = cleanCsv[i + 1];
 
-      for (let char of line + ',') {
-        if (char === '"' && !inQuotes) {
-          inQuotes = true;
-        } else if (char === '"' && inQuotes) {
-          inQuotes = false;
-        } else if (char === ',' && !inQuotes) {
-          values.push(current.trim().replace(/^"|"$/g, ''));
-          current = '';
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          // Escaped quote ("") -> treat as literal quote
+          currentVal += '"';
+          i++; // Skip next quote
         } else {
-          current += char;
+          // Toggle quote state
+          inQuotes = !inQuotes;
         }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        currentRow.push(currentVal);
+        currentVal = '';
+      } else if (char === '\n' && !inQuotes) {
+        // End of row
+        currentRow.push(currentVal);
+        rows.push(currentRow);
+        currentRow = [];
+        currentVal = '';
+      } else {
+        // Regular character
+        currentVal += char;
       }
+    }
 
+    // Push last row if exists
+    if (currentRow.length > 0 || currentVal.length > 0) {
+      currentRow.push(currentVal);
+      rows.push(currentRow);
+    }
+
+    if (rows.length <= 1) return [];
+
+    const headers = rows[0].map(h => h.trim());
+
+    return rows.slice(1).map(values => {
       const obj: any = {};
       headers.forEach((header, i) => {
-        obj[header] = values[i] || '';
+        // Strip keys of any accidental whitespace/quotes if still present, though parser handles most
+        const key = header.replace(/^"|"$/g, '').trim();
+        let val = values[i] || '';
+        // Clean value of surrounding quotes if manual logic missed it (usually not needed with this parser but safer)
+        // val = val.trim().replace(/^"|"$/g, ''); 
+        obj[key] = val.trim();
       });
       return obj as BranchData;
-    });
+    }).filter(item => item['StoreName'] && item['StoreName'].trim().length > 0);
   }
 
   isDataLoaded(): boolean {
@@ -160,7 +191,16 @@ export class DashboardComponent implements OnInit {
   }
 
   getWhatImpressedYouMost(branch: BranchData): string {
-    return branch['What impressed you most?'] || 'Nothing mentioned';
+    const impression = branch['What impressed you most?'];
+    if (impression && impression.trim().length > 0 && impression.toLowerCase() !== 'nothing mentioned') {
+      return impression;
+    }
+    // Fallback to behavior if impression is empty
+    const behavior = branch['Staff Behavior'];
+    if (behavior) {
+      return `Staff behavior was rated as ${behavior}`;
+    }
+    return 'No specific highlights recorded for this visit.';
   }
 
   getMysteryShopperName(branch: BranchData): string {
