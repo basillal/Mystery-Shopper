@@ -28,7 +28,7 @@
       </div>
 
       <!-- MAIN DASHBOARD -->
-      <div *ngIf="!isLoading && isDataLoaded() && viewMode === 'dashboard'" class="fade-in space-y-6">
+      <div *ngIf="!isLoading && isDataLoaded() && viewMode === 'dashboard'" class="fade-in space-y-6 pb-32">
 
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -63,10 +63,18 @@
           <!-- Total Audits -->
           <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
             <div class="flex items-center justify-between mb-3">
-              <div class="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-xl">🏪</div>
+              <div class="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center text-xl">📄</div>
             </div>
             <div class="text-3xl font-extrabold text-gray-900 mb-1">{{ branches.length }}</div>
             <div class="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Audits</div>
+          </div>
+          <!-- Total Stores -->
+          <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-xl">🏪</div>
+            </div>
+            <div class="text-3xl font-extrabold text-gray-900 mb-1">{{ uniqueBranches.length }}</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wide">Total Stores</div>
           </div>
           <!-- Avg Hygiene -->
           <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
@@ -94,7 +102,7 @@
           </div>
           <!-- Top Performer -->
           <div *ngIf="highestRated()"
-            class="xl:col-span-2 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 shadow-lg text-white relative overflow-hidden group">
+            class="xl:col-span-1 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-5 shadow-lg text-white relative overflow-hidden group">
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-700">
             </div>
@@ -105,15 +113,16 @@
                   <span class="text-xs font-bold bg-white/20 px-2 py-0.5 rounded uppercase tracking-wider">Top
                     Store</span>
                 </div>
-                <div class="text-xl font-bold truncate max-w-[180px] leading-tight">{{ getStoreName(highestRated()!) }}
+                <div class="text-lg font-bold truncate max-w-[140px] leading-tight mb-1">{{
+                  getStoreName(highestRated()!) }}
                 </div>
-                <div class="text-sm text-blue-100 mb-3">{{ getCity(highestRated()!) }}</div>
-                <div class="flex gap-3">
-                  <div class="bg-black/20 rounded px-2 py-1 text-xs">
-                    <span class="opacity-70">Hygiene</span> <span class="font-bold ml-1">{{
+                <!-- <div class="text-xs text-blue-100 mb-2">{{ getCity(highestRated()!) }}</div> -->
+                <div class="flex gap-2">
+                  <div class="bg-black/20 rounded px-1.5 py-0.5 text-[10px]">
+                    <span class="opacity-70">Hyg</span> <span class="font-bold ml-1">{{
                       getOverallHygiene(highestRated()!) }}</span>
                   </div>
-                  <div class="bg-black/20 rounded px-2 py-1 text-xs">
+                  <div class="bg-black/20 rounded px-1.5 py-0.5 text-[10px]">
                     <span class="opacity-70">Exp</span> <span class="font-bold ml-1">{{
                       getFinalScoresOverallExperience(highestRated()!) }}</span>
                   </div>
@@ -126,14 +135,13 @@
             class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer border-l-4 border-l-indigo-500"
             (click)="openAuditDetails(lastVisit()!)">
             <div class="flex justify-between items-start mb-2">
-              <span class="text-xs font-bold text-indigo-600 uppercase">Just Audited</span>
-              <span class="text-xs text-gray-400">{{ getDateOfVisit(lastVisit()!) }}</span>
+              <span class="text-xs font-bold text-indigo-600 uppercase">Just In</span>
+              <span class="text-[10px] text-gray-400">{{ getDateOfVisit(lastVisit()!) }}</span>
             </div>
-            <div class="font-bold text-gray-900 truncate">{{ getStoreName(lastVisit()!) }}</div>
-            <div class="text-xs text-gray-500 mt-1 mb-3">{{ getTimeOfVisit(lastVisit()!) }}</div>
+            <div class="font-bold text-gray-900 truncate text-sm">{{ getStoreName(lastVisit()!) }}</div>
+            <div class="text-[10px] text-gray-500 mt-1 mb-2">{{ getTimeOfVisit(lastVisit()!) }}</div>
             <button
-              class="text-xs bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-md font-semibold hover:bg-indigo-100 transition w-full">View
-              Details</button>
+              class="text-[10px] bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-md font-semibold hover:bg-indigo-100 transition w-full">View</button>
           </div>
         </div>
 
@@ -290,7 +298,7 @@
                     </span>
                   </td>
                   <td class="px-6 py-4 text-center">
-                    <button
+                    <button (click)="openAuditDetails(branch)"
                       class="text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-md">Details</button>
                   </td>
                 </tr>
