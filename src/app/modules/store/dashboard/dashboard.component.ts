@@ -82,6 +82,12 @@ export class DashboardComponent implements OnInit {
         console.log("CSV Data:", csv);
 
         this.branches = this.csvToJson(csv);
+
+        // Sort branches by Date of Visit (descending) so "Recent Audits" are first
+        this.branches.sort((a, b) => {
+          return this.parseDate(b['Date of Visit']).getTime() - this.parseDate(a['Date of Visit']).getTime();
+        });
+
         console.log("Loaded data:", this.branches);
         this.isLoading = false;
         console.log('Loaded audits:', this.branches.length);

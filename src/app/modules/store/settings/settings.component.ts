@@ -63,6 +63,8 @@ export class SettingsComponent implements OnInit {
   private readonly API_KEY = 'AIzaSyD-9QkwaiXAsP0HhGe6-elcWqjpO9VtLJU'; // Replace with your Google Sheets API key
   private readonly SHEET_NAME = 'Sheet1'; // Replace with your sheet name
 
+  protected readonly Math = Math; // Expose Math for template
+
   constructor(private http: HttpClient) { }
 
   ngOnInit(): void {
@@ -98,19 +100,56 @@ export class SettingsComponent implements OnInit {
    * Convert CSV to JSON
    */
   csvToJson(csv: string): BranchData[] {
-    const lines = csv.split('\n').filter(l => l.trim().length > 0);
-    if (lines.length === 0) return [];
+    const rows: string[][] = [];
+    let currentRow: string[] = [];
+    let currentVal = '';
+    let inQuotes = false;
 
-    const headers = lines[0].split(',').map(h => h.trim());
+    // Normalize newlines
+    const cleanCsv = csv.replace(/\r\n/g, '\n');
 
-    return lines.slice(1).map(line => {
-      const values = line.split(',');
+    for (let i = 0; i < cleanCsv.length; i++) {
+      const char = cleanCsv[i];
+      const nextChar = cleanCsv[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          currentVal += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        currentRow.push(currentVal);
+        currentVal = '';
+      } else if (char === '\n' && !inQuotes) {
+        currentRow.push(currentVal);
+        rows.push(currentRow);
+        currentRow = [];
+        currentVal = '';
+      } else {
+        currentVal += char;
+      }
+    }
+
+    if (currentRow.length > 0 || currentVal.length > 0) {
+      currentRow.push(currentVal);
+      rows.push(currentRow);
+    }
+
+    if (rows.length <= 1) return [];
+
+    const headers = rows[0].map(h => h.trim());
+
+    return rows.slice(1).map(values => {
       const obj: any = {};
-      headers.forEach((header, idx) => {
-        obj[header] = values[idx]?.trim() || '';
+      headers.forEach((header, i) => {
+        const key = header.replace(/^"|"$/g, '').trim();
+        let val = values[i] || '';
+        obj[key] = val.trim();
       });
       return obj as BranchData;
-    });
+    }).filter(item => item['StoreName'] && item['StoreName'].trim().length > 0);
   }
 
   /**

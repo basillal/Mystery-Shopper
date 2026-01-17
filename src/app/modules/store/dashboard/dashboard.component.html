@@ -405,8 +405,8 @@
           </div>
         </div>
 
-        <!-- Audit List Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <!-- Audit List Table (Desktop) -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hidden md:block">
           <table class="min-w-full">
             <thead class="bg-gray-50 border-b border-gray-100">
               <tr>
@@ -441,6 +441,43 @@
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Audit List Cards (Mobile) -->
+        <div class="md:hidden space-y-4">
+          <div *ngFor="let audit of getAuditsForSelectedStore()"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <div class="text-sm font-bold text-gray-900">{{ getDateOfVisit(audit) }}</div>
+                <div class="text-xs text-gray-500">{{ getTimeOfVisit(audit) }}</div>
+              </div>
+              <div class="flex items-center bg-gray-50 rounded px-2 py-1">
+                <span class="text-xs font-bold mr-1">Exp:</span>
+                <span class="font-bold text-blue-600 text-sm">{{ getFinalScoresOverallExperience(audit) }}/10</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-3 text-xs">
+              <div class="flex items-center text-gray-600">
+                <span class="mr-1">Shopper:</span>
+                <span class="font-medium text-gray-900">{{ getMysteryShopperName(audit) }}</span>
+              </div>
+              <div class="flex text-yellow-400">
+                <ng-container *ngFor="let s of [1,2,3,4,5]; let i = index">
+                  <span [class.text-gray-200]="i >= getOverallHygiene(audit)">★</span>
+                </ng-container>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-gray-100 flex gap-2">
+              <button (click)="openAuditDetails(audit)"
+                class="flex-1 py-2 bg-teal-600 text-white rounded-lg text-xs font-bold shadow-sm active:bg-teal-700">VIEW
+                DETAILS</button>
+              <button
+                class="px-3 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-bold active:bg-red-100">DELETE</button>
+            </div>
+          </div>
         </div>
 
         <div class="mt-6 flex gap-3">
