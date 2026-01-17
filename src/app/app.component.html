@@ -126,7 +126,7 @@
 
 <!-- Main content - Adjust margin based on sidebar states -->
 <div [ngClass]="{'sm:ml-64': !isSidebarCollapsed, 'sm:ml-0': isSidebarCollapsed}"
-    class="fixed inset-0 overflow-hidden transition-all duration-75">
+    class="relative min-h-screen transition-all duration-75">
     <div class="p-4 h-full">
         <div class="mt-24 h-full overflow-hidden">
             <router-outlet></router-outlet>
