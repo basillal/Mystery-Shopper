@@ -4,8 +4,9 @@ import { DashboardComponent } from './dashboard/dashboard.component';
 
 const routes: Routes = [
   {
-    path:'',
-    component:DashboardComponent
+    path: '',
+    component: DashboardComponent,
+    runGuardsAndResolvers: 'always'
   }
 ];
 

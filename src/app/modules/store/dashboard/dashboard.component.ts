@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 
 interface BranchData {
   "Timestamp": string;
@@ -43,12 +45,33 @@ export class DashboardComponent implements OnInit {
 
   branches: BranchData[] = [];
   isLoading = true;
-  showAllBranches = false;
+  protected readonly Math = Math;
 
-  constructor(private http: HttpClient) { }
+  // View State Management
+  viewMode: 'dashboard' | 'branches' | 'branch-details' | 'audit-details' = 'dashboard';
+  selectedStoreName: string | null = null;
+  selectedAudit: BranchData | null = null;
+
+  constructor(private http: HttpClient, private router: Router) {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      // Reset view on navigation (even same URL if configured)
+      this.viewMode = 'dashboard';
+      this.selectedStoreName = null;
+      this.selectedAudit = null;
+      this.fetchBranches();
+      this.scrollToTop();
+    });
+  }
 
   ngOnInit(): void {
-    this.fetchBranches();
+    // Initialization handled by constructor subscription or initial call
+    // If navigation triggers immediately, the subscription handles it. 
+    // But for first load, we need to fetch.
+    if (this.branches.length === 0) {
+      this.fetchBranches();
+    }
   }
 
   fetchBranches(): void {
@@ -262,5 +285,105 @@ export class DashboardComponent implements OnInit {
 
   scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ─── New Navigation & Logic ────────────────────────────────────────
+
+  get uniqueBranches(): any[] {
+    const groups: { [key: string]: BranchData[] } = {};
+
+    this.branches.forEach(b => {
+      const name = this.getStoreName(b);
+      if (!groups[name]) groups[name] = [];
+      groups[name].push(b);
+    });
+
+    return Object.keys(groups).map(name => {
+      const storeAudits = groups[name];
+      // Calculate agregates
+      const hygieneSum = storeAudits.reduce((sum, b) => sum + this.getOverallHygiene(b), 0);
+      const expSum = storeAudits.reduce((sum, b) => sum + this.getFinalScoresOverallExperience(b), 0);
+
+      // Get last audit for this store
+      const lastAudit = storeAudits.sort((a, b) => {
+        const dateA = this.parseDate(a['Date of Visit']);
+        const dateB = this.parseDate(b['Date of Visit']);
+        return dateB.getTime() - dateA.getTime();
+      })[0];
+
+      return {
+        name,
+        city: this.getCity(lastAudit),
+        count: storeAudits.length,
+        avgHygiene: Number((hygieneSum / storeAudits.length).toFixed(1)),
+        avgExperience: Number((expSum / storeAudits.length).toFixed(1)),
+        lastAuditDate: this.getDateOfVisit(lastAudit),
+        status: this.calculateStatus(storeAudits) // Placeholder
+      };
+    });
+  }
+
+  // Helper to parse DD/MM/YYYY
+  private parseDate(dateStr: string): Date {
+    if (!dateStr) return new Date('1900-01-01');
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      return new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    }
+    return new Date('1900-01-01');
+  }
+
+  calculateStatus(audits: BranchData[]): 'Improving' | 'Declining' | 'Stable' {
+    if (audits.length < 2) return 'Stable';
+    // Sort by date ascending to check trend
+    const sorted = [...audits].sort((a, b) => this.parseDate(a['Date of Visit']).getTime() - this.parseDate(b['Date of Visit']).getTime());
+
+    // Compare last two
+    const last = this.getFinalScoresOverallExperience(sorted[sorted.length - 1]);
+    const prev = this.getFinalScoresOverallExperience(sorted[sorted.length - 2]);
+
+    if (last > prev) return 'Improving';
+    if (last < prev) return 'Declining';
+    return 'Stable';
+  }
+
+  getAuditsForSelectedStore(): BranchData[] {
+    if (!this.selectedStoreName) return [];
+    return this.branches.filter(b => this.getStoreName(b) === this.selectedStoreName);
+  }
+
+  // Navigation Actions
+
+  showDashboard(): void {
+    this.viewMode = 'dashboard';
+    this.scrollToTop();
+  }
+
+  showBranchesList(): void {
+    this.viewMode = 'branches';
+    this.scrollToTop();
+  }
+
+  openBranchDetails(storeName: string): void {
+    this.selectedStoreName = storeName;
+    this.viewMode = 'branch-details';
+    this.scrollToTop();
+  }
+
+  openAuditDetails(audit: BranchData): void {
+    this.selectedAudit = audit;
+    this.viewMode = 'audit-details';
+    this.scrollToTop();
+  }
+
+  goBack(): void {
+    if (this.viewMode === 'audit-details') {
+      this.viewMode = 'branch-details';
+    } else if (this.viewMode === 'branch-details') {
+      this.viewMode = 'branches';
+      this.selectedStoreName = null;
+    } else if (this.viewMode === 'branches') {
+      this.viewMode = 'dashboard';
+    }
   }
 }
